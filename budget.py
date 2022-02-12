@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
+from datetime import datetime
 import psycopg2
 import configparser
+from userInput import *
 from config import getDatabaseConfigs
 
 def connect():
@@ -31,11 +33,20 @@ def ensureDatabaseSchema(connection):
             """,
             """
             CREATE TABLE expenses(
-                time date not null,
+                year smallint not null,
+                month smallint not null,
+                day smallint not null,
                 amount numeric,
                 category varchar(200) references categories(name),
                 description varchar(500)
             )
+            """,
+            """
+            CREATE TABLE budgetbuckets(
+                year smallint not null,
+                month smallint not null,
+                category varchar(200) references categories(name)
+                )
             """
     )
     try:
@@ -73,10 +84,29 @@ def addBudgetCategory(connection, categoryName):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-def addBudgetCategoryMenu(connection):
-    """ Prompts user for category name to add """
-    category = input("Enter new category name")
-    addBudgetCategory(connection, category)
+def getBudgetExpenses(connection):
+    try:
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM expenses");
+        connection.commit()
+        expenses = expenses.fetchall()
+        cur.close()
+        return expenses
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+def addBudgetExpense(connection, year, month, day, category, amount, description):
+    try:
+        cur = connection.cursor()
+        cur.execute("INSERT INTO expenses(year, month, day, amount, category,description) VALUES(%s)",
+                (year, month, day, amount, category, description))
+        connection.commit()
+        cur.close()
+        print("Budget Categories: ")
+        print(getBudgetCategories(connection))
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
 
 
 def main():
@@ -84,7 +114,8 @@ def main():
     #ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
-    addBudgetCategoryMenu(connection)
+    getDateFromUser()
+
 
 
 
@@ -92,7 +123,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-
+    budget = BudgetUI()
 
 
