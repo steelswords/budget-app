@@ -2,6 +2,7 @@
 # Code from https://dash.plotly.com/datatable/editable
 from dash import Dash, dash_table, dcc, html, State
 from dash.dependencies import Input, Output
+import calendar
 import pandas as pd
 from budget import *
 
@@ -9,7 +10,7 @@ app = Dash(__name__)
 app.Title = "Budget App"
 
 db = connect()
-#ensureDatabaseSchema(db)
+ensureDatabaseSchema(db)
 print(getBudgetCategories(db))
 
 params = [
@@ -20,15 +21,15 @@ params = [
 expensePage = [
     html.H1("Expenses"),
     dcc.Dropdown(["2022"], "2022", id='expense-year'),
-    dcc.Dropdown(["January", "February", "March", "April", "May", "June", "July",
-        "August", "September", "October", "November", "December"], "January", id="expense-month"),
-    dcc.Input(id="expense-day", type="number", placeholder="Day"),
+    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
+    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
     dcc.Dropdown([i[0] for i in getBudgetCategories(db)], "Food", id="expense-category-dropdown"),
     "Amount: ",
     dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
     "Description: ",
     dcc.Input(id="expense-description", type="text",placeholder="Description"),
     html.Button('Add', id='add-expense', n_clicks=0),
+    html.Div(id='expense-output')
 ]
 
 
@@ -53,7 +54,6 @@ app.layout = html.Div([
 ])
 
 
-
 @app.callback(
     Output('table-editing-simple-output', 'figure'),
     Input('table-editing-simple', 'data'),
@@ -72,18 +72,29 @@ def display_output(rows, columns):
 
 
 @app.callback(
-    State('expense-year', 'expenseYear'),
-    State('expense-month', 'expenseMonth'),
-    State('expense-day', 'expenseDay'),
-    State('expense-category-dropdown', 'expenseCategory'),
-    Input('expense-amount', 'expenseAmount'),
-    State('expense-description', 'expenseDescription'),
-    State('add-expense', 'n_clicks'))
-def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription):
-    print("Adding budget expense from {year}-{month}-{day}: {category}: {amount}".format(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount))
-    addBudgetExpense(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+    Output('expense-output', 'children'),
+    Output('expense-day', 'value'),
+    Output('expense-category-dropdown', 'value'),
+    Output('expense-amount', 'value'),
+    Output('expense-description', 'value'),
+    State('expense-year', 'value'),
+    State('expense-month', 'value'),
+    State('expense-day', 'value'),
+    State('expense-category-dropdown', 'value'),
+    State('expense-amount', 'value'),
+    State('expense-description', 'value'),
+    Input('add-expense', 'n_clicks'))
+def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription, n_clicks):
+    expenseString = "Adding budget expense from {}-{}-{}: {}: {} ({})".format(
+            expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+    if expenseDay is not None and expenseAmount is not None and expenseDescription is not None and expenseCategory is not None:
+        print(expenseString)
+        #addBudgetExpense(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+    return expenseString, "", None, None, ""
+
 
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
 
