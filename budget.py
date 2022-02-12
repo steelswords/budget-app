@@ -150,15 +150,14 @@ def getBudgetExpenses(connection):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-def addBudgetExpense(connection, year, month, day, category, amount, description):
+def addBudgetExpense(connection, year : int, month : int, day : int, category : str,
+        amount : float, description : str):
     try:
         cur = connection.cursor()
-        cur.execute("INSERT INTO expenses(year, month, day, amount, category,description) VALUES (%s)",
-                (year, month, day, amount, category, description))
+        sqlCmd = "INSERT INTO expenses(year, month, day, amount, category, description) VALUES ({}, {}, {}, {}, '{}', '{}')".format (year, month, day, amount, category, description)
+        cur.execute(sqlCmd)
         connection.commit()
         cur.close()
-        print("Budget Categories: ")
-        print(getBudgetCategories(connection))
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 

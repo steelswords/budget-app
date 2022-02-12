@@ -85,11 +85,13 @@ def display_output(rows, columns):
     State('expense-description', 'value'),
     Input('add-expense', 'n_clicks'))
 def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription, n_clicks):
+    month = monthNameToNumber(expenseMonth)
     expenseString = "Adding budget expense from {}-{}-{}: {}: {} ({})".format(
-            expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+            expenseYear, month, expenseDay, expenseCategory, expenseAmount, expenseDescription)
     if expenseDay is not None and expenseAmount is not None and expenseDescription is not None and expenseCategory is not None:
         print(expenseString)
-        #addBudgetExpense(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+        addBudgetExpense(db, expenseYear, month,
+                expenseDay, expenseCategory, expenseAmount, expenseDescription)
     return expenseString, "", None, None, ""
 
 
