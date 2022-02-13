@@ -1,0 +1,4 @@
+dash
+pandas
+console-menu
+psycopg2-binary
