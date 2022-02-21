@@ -23,7 +23,7 @@ expensePage = [
     dcc.Dropdown(["2022"], "2022", id='expense-year'),
     dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
     html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
-    dcc.Dropdown([i[0] for i in getBudgetCategories(db)], "Food", id="expense-category-dropdown"),
+    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
     "Amount: ",
     dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
     "Description: ",
@@ -32,23 +32,40 @@ expensePage = [
     html.Div(id='expense-output')
 ]
 
+viewPage = [
+    dash_table.DataTable(
+        id='table-editing-simple',
+        columns=(
+            [{'id': 'Model', 'name': 'Model'}] +
+            [{'id': p, 'name': p} for p in params]
+        ),
+        data=[
+            dict(Model=i, **{param: 0 for param in params})
+            for i in range(1, 5)
+        ],
+        editable=True
+    ),
+]
+
+monthNames = list(calendar.month_name)[1:12]
+bucketPage = [
+    dash_table.DataTable(
+        id='bucket-year-view-table',
+        columns=(
+            [{'id': 'category', 'name': 'Category'}] +
+            [{'id': 'January', 'name': 'January'}]
+            #[{'id': m, 'name': m} for m in list(calendar.month_name)[1:12]]
+        ),
+        data=[{'category': c} for c in getBudgetCategories(db)] +
+            [{'January': amount} for amount in range(1,14)],
+        editable=True
+)]
+
 
 app.layout = html.Div([
     html.H1('Budget'),
     dcc.Tabs([
-        dcc.Tab(label='View', children = [
-            dash_table.DataTable(
-                id='table-editing-simple',
-                columns=(
-                    [{'id': 'Model', 'name': 'Model'}] +
-                    [{'id': p, 'name': p} for p in params]
-                ),
-                data=[
-                    dict(Model=i, **{param: 0 for param in params})
-                    for i in range(1, 5)
-                ],
-                editable=True
-            )]),
+        dcc.Tab(label='View', children = bucketPage),
         dcc.Tab(label='Edit', children = expensePage)
     ])
 ])
