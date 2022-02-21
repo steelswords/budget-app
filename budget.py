@@ -7,6 +7,11 @@ import configparser
 from userInput import *
 from config import getDatabaseConfigs
 
+testing=True
+expenseTableName="expenses"
+if testing:
+    expenseTableName="seedexpenses"
+
 def monthNameToNumber(monthName : str) -> int:
     value = list(calendar.month_name).index(monthName)
     return value
@@ -37,7 +42,7 @@ def ensureDatabaseSchema(connection):
             )
             """,
             """
-            CREATE TABLE IF NOT EXISTS expenses(
+            CREATE TABLE IF NOT EXISTS {}(
                 year smallint not null,
                 month smallint not null,
                 day smallint not null,
@@ -45,7 +50,7 @@ def ensureDatabaseSchema(connection):
                 category varchar(200) references categories(name),
                 description varchar(500)
             )
-            """,
+            """.format(expenseTableName),
             """
             CREATE TABLE IF NOT EXISTS budgetbuckets(
                 year smallint not null,
@@ -106,7 +111,7 @@ def getBudgetCategories(connection):
         categories = cur.fetchall()
         connection.commit()
         cur.close()
-        return categories
+        return [i[0] for i in categories]
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
@@ -142,9 +147,9 @@ def addBudgetCategory(connection, categoryName):
 def getBudgetExpenses(connection):
     try:
         cur = connection.cursor()
-        cur.execute("SELECT * FROM expenses");
+        cur.execute("SELECT * FROM {}".format(expenseTableName));
         connection.commit()
-        expenses = expenses.fetchall()
+        expenses = cur.fetchall()
         cur.close()
         return expenses
     except (Exception, psycopg2.DatabaseError) as error:
@@ -154,7 +159,7 @@ def addBudgetExpense(connection, year : int, month : int, day : int, category : 
         amount : float, description : str):
     try:
         cur = connection.cursor()
-        sqlCmd = "INSERT INTO expenses(year, month, day, amount, category, description) VALUES ({}, {}, {}, {}, '{}', '{}')".format (year, month, day, amount, category, description)
+        sqlCmd = "INSERT INTO {}(year, month, day, amount, category, description) VALUES ({}, {}, {}, {}, '{}', '{}')".format(expenseTableName, year, month, day, amount, category, description)
         cur.execute(sqlCmd)
         connection.commit()
         cur.close()
@@ -169,12 +174,6 @@ def main():
     print("Categories: ")
     print(getBudgetCategories(connection))
     getDateFromUser()
-
-
-
-
-
-
 
 if __name__ == '__main__':
     budget = BudgetUI()
