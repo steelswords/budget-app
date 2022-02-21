@@ -26,5 +26,3 @@ docker run -it --rm -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -e P
 ## Maintainance
 
 Update the list of all packages/libraries in use in `requirements.txt` (with version if neccessary)
-
->>>>>>> c970b9e7f81ab8cefac6ac608989102645c4bfba
