@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # Code from https://dash.plotly.com/datatable/editable
 from dash import Dash, dash_table, dcc, html, State
+from dash.dash_table import DataTable, FormatTemplate
 from dash.dependencies import Input, Output
 import calendar
 import pandas as pd
@@ -12,6 +13,17 @@ app.Title = "Budget App"
 db = connect()
 ensureDatabaseSchema(db)
 print(getBudgetCategories(db))
+
+money = FormatTemplate.money(2)
+
+def getBucketPageData():
+    categories = getBudgetCategories(db)
+    data = []
+    for i in range(0, len(categories)):
+        data += [{'category': categories[i]}]
+        data += [{'category': "Spent:"}]
+    return data
+
 
 params = [
     'Weight', 'Torque', 'Width', 'Height',
@@ -48,19 +60,62 @@ viewPage = [
 ]
 
 monthNames = list(calendar.month_name)[1:12]
+
+def getExenseData(year : int):
+    """Returns a list of lists of dictionaries representing how much was spent in each
+    category for each month. E.g. [[{'January': 126.33}, {'February': 12.77}...]]
+    The inner lists are in the same order of categories as getBudgetCategories() returns"""
+    result = []
+    categories = getBudgetCategories(db)
+    for category in categories:
+        # Find the sum of expenses for each month, add them to list
+        innerResult = {'category': category}
+        dataFrame = pd.read_sql(f"SELECT * FROM {expenseTableName} WHERE category = '{category}'", sqlAlchemyEngine)
+        # Add list to list of lists
+        for month in range(1,13):
+            amountSpent = dataFrame.query(f'month == {month}').amount.sum()
+            monthString = list(calendar.month_name)[month]
+            innerResult[monthString] = amountSpent
+        result.append(innerResult)
+    print(result)
+    return result
+
 bucketPage = [
+    html.H2("Expenses by Category and Month"),
     dash_table.DataTable(
-        id='bucket-year-view-table',
+        id='bucket-year-edit-table',
         columns=(
             [{'id': 'category', 'name': 'Category'}] +
-            [{'id': 'January', 'name': 'January'}]
-            #[{'id': m, 'name': m} for m in list(calendar.month_name)[1:12]]
+            #[{'id': 'January', 'name': 'January'}]
+            [{'id': m, 'name': m, 'type':'numeric', 'format':money} for m in list(calendar.month_name)[1:13]]
         ),
-        data=[{'category': c} for c in getBudgetCategories(db)] +
-            [{'January': amount} for amount in range(1,14)],
-        editable=True
-)]
+        #data = [{'category': 
+        #data=[{'category': c, 'category': 'Spent:'} for c in getBudgetCategories(db)] +
+        #    [{'January': amount} for amount in range(1,14)],
+        #data = [{'category': 'Food', 'January': 397.99, 'February': 421}],
+        data=getExpenseData(2022),
+        #data = [{'category': 'Food', 'March': 300, 'June': 250},
+        #    {'category': 'Tristan - WTF', 'May': 300, 'July': 250},],
+        editable=False),
+    html.Button('Save', id='save-buckets', n_clicks=0),
+    html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
+    html.Div(id='empty-output'),
 
+    ]
+
+@app.callback(
+        Output('empty-output', 'children'),
+        Input('bucket-year-edit-table', 'data_timestamp'),
+        State('bucket-year-edit-table', 'data'))
+def updateYearBucketTable(timestamp, rows):
+    for row in rows:
+        try:
+            print("Changing row['January'] to {}".format(row['January']))
+            for element in row:
+                print('"{}"'.format(element))
+        except Exception as error:
+            print(error)
+    return ""
 
 app.layout = html.Div([
     html.H1('Budget'),
@@ -69,7 +124,6 @@ app.layout = html.Div([
         dcc.Tab(label='Edit', children = expensePage)
     ])
 ])
-
 
 @app.callback(
     Output('table-editing-simple-output', 'figure'),
@@ -103,8 +157,7 @@ def display_output(rows, columns):
     Input('add-expense', 'n_clicks'))
 def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription, n_clicks):
     month = monthNameToNumber(expenseMonth)
-    expenseString = "Adding budget expense from {}-{}-{}: {}: {} ({})".format(
-            expenseYear, month, expenseDay, expenseCategory, expenseAmount, expenseDescription)
+    expenseString = f"Adding budget expense from {expenseYear}-{month}-{expenseDay}: {expenseCategory}: {expenseAmount} ({expenseDescription})"
     if expenseDay is not None and expenseAmount is not None and expenseDescription is not None and expenseCategory is not None:
         print(expenseString)
         addBudgetExpense(db, expenseYear, month,

@@ -5,12 +5,21 @@ import calendar
 import psycopg2
 import configparser
 from userInput import *
-from config import getDatabaseConfigs
+from config import *
+from sqlalchemy import create_engine
 
 testing=True
 expenseTableName="expenses"
 if testing:
     expenseTableName="seedexpenses"
+
+# Start SQLAlchemy engine for getting pandas dataframes from the db
+sqlAlchemyEngine = None
+try:
+    sqlAlchemyEngine = create_engine(getSqlAlchemyConnectionString())
+except(Exception) as error:
+    print("An error occurred! %s" % error)
+
 
 def monthNameToNumber(monthName : str) -> int:
     value = list(calendar.month_name).index(monthName)
@@ -55,7 +64,8 @@ def ensureDatabaseSchema(connection):
             CREATE TABLE IF NOT EXISTS budgetbuckets(
                 year smallint not null,
                 month smallint not null,
-                category varchar(200) references categories(name)
+                category varchar(200) references categories(name),
+                amount numeric
                 )
             """,
     )
@@ -164,6 +174,23 @@ def addBudgetExpense(connection, year : int, month : int, day : int, category : 
         connection.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+def setBucketCategory(year : int, month : int, category : str, amountToBudget):
+    try:
+        cur = connection.cursor()
+        sqlCmd = f"INSERT INTO budgetbuckets(year, month, category, amount) VALUES ({year}, {month}, {category}, {amountToBudget})"
+        cur.execute(sqlCmd)
+        connection.commit()
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+def getBucketDataframe():
+    try:
+        sqlCmd = "SELECT * FROM budgetbuckets;"
+        return pd.read_sql(sqlCmd, sqlAlchemyEngine)
+    except Exception as error:
         print(error)
 
 
