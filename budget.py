@@ -63,7 +63,7 @@ def ensureDatabaseSchema(connection):
                 amount numeric,
                 category varchar(200) references categories(name),
                 description varchar(500),
-                UNIQUE(year, month, day, amount, category, description)
+                UNIQUE(year, month, day, amount, category)
             )
             """.format(expenseTableName),
             """

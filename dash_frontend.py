@@ -14,52 +14,29 @@ print(getBudgetCategories(db))
 
 money = FormatTemplate.money(2)
 
+monthNames = list(calendar.month_name)[1:12]
 lowerCaseMonthNames = [ m.lower() for m in list(calendar.month_name)[1:]]
 
-def getBucketPageData():
-    categories = getBudgetCategories(db)
-    data = []
-    for i in range(0, len(categories)):
-        data += [{'category': categories[i]}]
-        data += [{'category': "Spent:"}]
-    return data
+bucketColumns=(
+    [{'id': 'category', 'name': 'Category'}] +
+    #[{'id': 'January', 'name': 'January'}]
+    [{'id': m, 'name': m, 'type':'numeric', 'format':money} for m in list(calendar.month_name)[1:13]]
+)
 
-
-params = [
-    'Weight', 'Torque', 'Width', 'Height',
-    'Efficiency', 'Power', 'Displacement'
-]
-
-expensePage = [
-    html.H1("Expenses"),
-    dcc.Dropdown(["2022"], "2022", id='expense-year'),
-    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
-    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
-    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
-    "Amount: ",
-    dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
-    "Description: ",
-    dcc.Input(id="expense-description", type="text",placeholder="Description"),
-    html.Button('Add', id='add-expense', n_clicks=0),
-    html.Div(id='expense-output')
-]
-
-viewPage = [
-    dash_table.DataTable(
-        id='table-editing-simple',
-        columns=(
-            [{'id': 'Model', 'name': 'Model'}] +
-            [{'id': p, 'name': p} for p in params]
-        ),
-        data=[
-            dict(Model=i, **{param: 0 for param in params})
-            for i in range(1, 5)
-        ],
-        editable=True
-    ),
-]
-
-monthNames = list(calendar.month_name)[1:12]
+def getBucketData(year : int):
+    wholeDataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year}", sqlAlchemyEngine)
+    result = []
+    for category in wholeDataFrame['category']:
+        # Find the bucket allocation for each month
+        innerResult = {'category': category}
+        dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
+        print(dataFrame)
+        for month in lowerCaseMonthNames:
+            amountAllocated = dataFrame[month][0]
+            innerResult[month.capitalize()] = amountAllocated
+        result.append(innerResult)
+    #print(result)
+    return result
 
 def getExpenseData(year : int):
     """Returns a list of dictionaries representing how much was spent in each
@@ -79,32 +56,6 @@ def getExpenseData(year : int):
         result.append(innerResult)
     print(result)
     return result
-
-def getBucketData(year : int):
-    wholeDataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year}", sqlAlchemyEngine)
-    result = []
-    for category in wholeDataFrame['category']:
-        # Find the bucket allocation for each month
-        innerResult = {'category': category}
-        dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
-        print(dataFrame)
-        for month in lowerCaseMonthNames:
-            amountAllocated = dataFrame[month][0]
-            innerResult[month.capitalize()] = amountAllocated
-        result.append(innerResult)
-    #print(result)
-    return result
-
-#def getBucketData(year : int):
-#    dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year};", sqlAlchemyEngine)
-#    return dataFrame.to_dict()
-    
-
-bucketColumns=(
-    [{'id': 'category', 'name': 'Category'}] +
-    #[{'id': 'January', 'name': 'January'}]
-    [{'id': m, 'name': m, 'type':'numeric', 'format':money} for m in list(calendar.month_name)[1:13]]
-)
 
 bucketPage = [
     html.H2("Budget by Category and Month"),
@@ -128,47 +79,37 @@ bucketPage = [
         #    {'category': 'Tristan - WTF', 'May': 300, 'July': 250},],
         editable=False),
     html.Div(id='empty-output'),
+]
 
-    ]
+expensePage = [
+    html.H1("Expenses"),
+    dcc.Dropdown(["2022"], "2022", id='expense-year'),
+    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
+    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
+    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
+    "Amount: ",
+    dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
+    "Description: ",
+    dcc.Input(id="expense-description", type="text",placeholder="Description"),
+    html.Button('Add', id='add-expense', n_clicks=0),
+    html.Div(id='expense-output')
+]
 
-#@app.callback(
-#        Output('empty-output', 'children'),
-#        Input('bucket-year-edit-table', 'data_timestamp'),
-#        State('bucket-year-edit-table', 'data'))
-#def updateYearBucketTable(timestamp, rows):
-#    for row in rows:
-#        try:
-#            print("Changing row['January'] to {}".format(row['January']))
-#            for element in row:
-#                print('"{}"'.format(element))
-#        except Exception as error:
-#            print(error)
-#    return ""
-
-app.layout = html.Div([
-    html.H1('Budget'),
-    dcc.Tabs([
-        dcc.Tab(label='View', children = bucketPage),
-        dcc.Tab(label='Edit', children = expensePage)
+# Main layout
+# This is a function so when you refresh the page the buckets will update.
+# TODO: Get this to happen dynamically whenever you add entries.
+def serve_layout():
+    return html.Div([
+        html.H1('Budget'),
+        dcc.Tabs([
+            dcc.Tab(label='View', children = bucketPage),
+            dcc.Tab(label='Edit', children = expensePage)
+        ])
     ])
-])
 
-# Old example code.
-@app.callback(
-    Output('table-editing-simple-output', 'figure'),
-    Input('table-editing-simple', 'data'),
-    Input('table-editing-simple', 'columns'))
-def display_output(rows, columns):
-    df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
-    return {
-        'data': [{
-            'type': 'parcoords',
-            'dimensions': [{
-                'label': col['name'],
-                'values': df[col['id']]
-            } for col in columns]
-        }]
-    }
+app.layout = serve_layout()
+
+# Callback to update expense 
 
 # Callback to update budget buckets
 @app.callback(
@@ -189,9 +130,7 @@ def budgetBucketCallback(data, data_timestamp, columns):
             setBucketBudget(year = 2022, category = row['category'],
                 month = monthNumber, amountBudgeted = budgetedAmount)
 
-
-
-
+# Callback to add Budget Expenses
 @app.callback(
     Output('expense-output', 'children'),
     Output('expense-day', 'value'),
@@ -207,12 +146,15 @@ def budgetBucketCallback(data, data_timestamp, columns):
     Input('add-expense', 'n_clicks'))
 def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory, expenseAmount, expenseDescription, n_clicks):
     month = monthNameToNumber(expenseMonth)
-    expenseString = f"Adding budget expense from {expenseYear}-{month}-{expenseDay}: {expenseCategory}: {expenseAmount} ({expenseDescription})"
+    expenseString = f"expense from {expenseYear}-{month}-{expenseDay}: {expenseCategory}: {expenseAmount} ({expenseDescription})"
     if expenseDay is not None and expenseAmount is not None and expenseDescription is not None and expenseCategory is not None:
-        print(expenseString)
+        print(f"Adding {expenseString}")
         addBudgetExpense(db, expenseYear, month,
                 expenseDay, expenseCategory, expenseAmount, expenseDescription)
+    else:
+        print(f"Could not add {expenseString}")
     return expenseString, "", None, None, ""
+    
 
 
 
