@@ -150,12 +150,10 @@ def getBudgetCategories(connection):
 
 def isBudgetCategoryPresent(connection, categoryName : str) -> bool:
     cur = connection.cursor()
-    #cur.execute("SELECT * FROM categories where name ilike %s", (categoryName))
     cur.execute("SELECT name FROM categories where name = %s;", (categoryName,))
     matches = cur.fetchall()
     connection.commit()
     cur.close()
-    # print(matches)
     return len(matches) > 0
 
 def addBudgetCategory(connection, categoryName, order=100):
@@ -171,8 +169,6 @@ def addBudgetCategory(connection, categoryName, order=100):
         cur.execute("INSERT INTO categories(name, table_order) VALUES(%s, %s);", (categoryName,order,))
         connection.commit()
         cur.close()
-        #print("Budget Categories: ")
-        #print(getBudgetCategories(connection))
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
@@ -199,16 +195,6 @@ def addBudgetExpense(connection, year : int, month : int, day : int, category : 
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
-
-#def setBucketCategory(year : int, month : int, category : str, amountToBudget):
-#    try:
-#        cur = connection.cursor()
-#        sqlCmd = f"INSERT INTO budgetbuckets(year, month, category, amount) VALUES ({year}, {month}, {category}, {amountToBudget})"
-#        cur.execute(sqlCmd)
-#        connection.commit()
-#        cur.close()
-#    except (Exception, psycopg2.DatabaseError) as error:
-#        print(error)
 
 def getBucketsByYear(year : int):
     """Returns pandas dataframe with category and allocations by month"""
@@ -252,7 +238,6 @@ def getBucketDataframe():
 
 def main():
     connection = connect()
-    #ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
     getDateFromUser()

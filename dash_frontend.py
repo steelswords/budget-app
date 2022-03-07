@@ -82,6 +82,7 @@ bucketPage = [
     html.Button('Save', id='save-buckets', n_clicks=0),
     html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
     html.H2("Budget and Expenses by Category and Month"),
+    html.P("Remember to refresh this page if you've added expenses!"),
     dash_table.DataTable(id='combined-bucket-expenses-table',
         columns = bucketColumns,
         data = getCombinedTable(),
@@ -164,9 +165,6 @@ def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory,
     else:
         print(f"Could not add {expenseString}")
     return expenseString, "", None, None, ""
-    
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
