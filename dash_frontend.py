@@ -57,44 +57,6 @@ def getExpenseData(year : int):
     print(result)
     return result
 
-bucketPage = [
-    html.H2("Budget by Category and Month"),
-    dash_table.DataTable(
-        id='bucket-budget-edit-table',
-        columns = bucketColumns,
-        data = getBucketData(2022),
-        editable=True),
-    html.Button('Save', id='save-buckets', n_clicks=0),
-    html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
-    html.H2("Expenses by Category and Month"),
-    dash_table.DataTable(
-        id='bucket-year-edit-table',
-        columns=bucketColumns,
-        #data = [{'category': 
-        #data=[{'category': c, 'category': 'Spent:'} for c in getBudgetCategories(db)] +
-        #    [{'January': amount} for amount in range(1,14)],
-        #data = [{'category': 'Food', 'January': 397.99, 'February': 421}],
-        data=getExpenseData(2022),
-        #data = [{'category': 'Food', 'March': 300, 'June': 250},
-        #    {'category': 'Tristan - WTF', 'May': 300, 'July': 250},],
-        editable=False),
-    html.Div(id='empty-output'),
-]
-
-expensePage = [
-    html.H1("Expenses"),
-    dcc.Dropdown(["2022"], "2022", id='expense-year'),
-    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
-    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
-    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
-    "Amount: ",
-    dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
-    "Description: ",
-    dcc.Input(id="expense-description", type="text",placeholder="Description"),
-    html.Button('Add', id='add-expense', n_clicks=0),
-    html.Div(id='expense-output')
-]
-
 def getCombinedTable():
     buckets = getBucketData(2022)
     expenses = getExpenseData(2022)
@@ -110,11 +72,37 @@ def getCombinedTable():
         result.append(expensesRow)
     return result
 
-bucketPage.append(dash_table.DataTable(id='combined-bucket-expenses-table',
-    columns = bucketColumns,
-    data = getCombinedTable()
-    ))
+bucketPage = [
+    html.H2("Budget by Category and Month"),
+    dash_table.DataTable(
+        id='bucket-budget-edit-table',
+        columns = bucketColumns,
+        data = getBucketData(2022),
+        editable=True),
+    html.Button('Save', id='save-buckets', n_clicks=0),
+    html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
+    html.H2("Budget and Expenses by Category and Month"),
+    dash_table.DataTable(id='combined-bucket-expenses-table',
+        columns = bucketColumns,
+        data = getCombinedTable(),
+        editable = False
+    ),
+    html.Div(id='empty-output')
+]
 
+expensePage = [
+    html.H1("Expenses"),
+    dcc.Dropdown(["2022"], "2022", id='expense-year'),
+    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
+    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
+    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
+    "Amount: ",
+    dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
+    "Description: ",
+    dcc.Input(id="expense-description", type="text",placeholder="Description"),
+    html.Button('Add', id='add-expense', n_clicks=0),
+    html.Div(id='expense-output')
+]
 
 # Main layout
 # This is a function so when you refresh the page the buckets will update.
