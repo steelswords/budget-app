@@ -26,7 +26,8 @@ bucketColumns=(
 def getBucketData(year : int):
     wholeDataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year}", sqlAlchemyEngine)
     result = []
-    for category in wholeDataFrame['category']:
+    #for category in wholeDataFrame['category']:
+    for category in getBudgetCategories(db):
         # Find the bucket allocation for each month
         innerResult = {'category': category}
         dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
@@ -35,7 +36,6 @@ def getBucketData(year : int):
             amountAllocated = dataFrame[month][0]
             innerResult[month.capitalize()] = amountAllocated
         result.append(innerResult)
-    #print(result)
     return result
 
 def getExpenseData(year : int):
@@ -95,6 +95,27 @@ expensePage = [
     html.Div(id='expense-output')
 ]
 
+def getCombinedTable():
+    buckets = getBucketData(2022)
+    expenses = getExpenseData(2022)
+    result = []
+    for index in range(0, len(buckets)):
+
+        bucketsRow = buckets[index]
+        expensesRow = expenses[index]
+        # Add a name to expenses category name
+        expensesRow['category'] = expensesRow['category'] + ' - Spent'
+        print(f"Combining {bucketsRow['category']} with {expensesRow['category']}")
+        result.append(bucketsRow)
+        result.append(expensesRow)
+    return result
+
+bucketPage.append(dash_table.DataTable(id='combined-bucket-expenses-table',
+    columns = bucketColumns,
+    data = getCombinedTable()
+    ))
+
+
 # Main layout
 # This is a function so when you refresh the page the buckets will update.
 # TODO: Get this to happen dynamically whenever you add entries.
@@ -113,7 +134,7 @@ app.layout = serve_layout()
 
 # Callback to update budget buckets
 @app.callback(
-    Output('empty-output', 'children'),
+    Output('combined-bucket-expenses-table', 'data'),
     State('bucket-budget-edit-table', 'data'),
     Input('bucket-budget-edit-table', 'data_timestamp'),
     Input('bucket-budget-edit-table', 'columns'))
@@ -126,9 +147,10 @@ def budgetBucketCallback(data, data_timestamp, columns):
             budgetedAmount = row[monthNames[monthNumber]]
             if budgetedAmount is None:
                 budgetedAmount = 0
-            print(f"Setting {row['category']} for month {monthNumber} to {budgetedAmount}")
+            #print(f"Setting {row['category']} for month {monthNumber} to {budgetedAmount}")
             setBucketBudget(year = 2022, category = row['category'],
                 month = monthNumber, amountBudgeted = budgetedAmount)
+    return getCombinedTable()
 
 # Callback to add Budget Expenses
 @app.callback(

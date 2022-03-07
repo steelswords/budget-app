@@ -51,6 +51,8 @@ def ensureDatabaseSchema(connection):
             """
             CREATE TABLE IF NOT EXISTS categories(
                 name varchar(200) not null,
+                table_order smallint,
+                description varchar(1000),
                 primary key(name),
                 UNIQUE(name)
             )
@@ -123,9 +125,11 @@ def ensureDatabaseSchema(connection):
         cur = connection.cursor()
         for command in commands:
             cur.execute(command)
+        order = 1
         for category in categories:
             try:
-                addBudgetCategory(connection, category)
+                addBudgetCategory(connection, category, order)
+                order = order + 1
             except Exception as error:
                 print(error)
         connection.commit()
@@ -136,7 +140,7 @@ def ensureDatabaseSchema(connection):
 def getBudgetCategories(connection):
     try:
         cur = connection.cursor()
-        cur.execute("SELECT * FROM categories")
+        cur.execute("SELECT name FROM categories ORDER BY table_order ASC;")
         categories = cur.fetchall()
         connection.commit()
         cur.close()
@@ -147,14 +151,14 @@ def getBudgetCategories(connection):
 def isBudgetCategoryPresent(connection, categoryName : str) -> bool:
     cur = connection.cursor()
     #cur.execute("SELECT * FROM categories where name ilike %s", (categoryName))
-    cur.execute("SELECT * FROM categories where name = %s;", (categoryName,))
+    cur.execute("SELECT name FROM categories where name = %s;", (categoryName,))
     matches = cur.fetchall()
     connection.commit()
     cur.close()
     # print(matches)
     return len(matches) > 0
 
-def addBudgetCategory(connection, categoryName):
+def addBudgetCategory(connection, categoryName, order=100):
     """ Adds a budget category to the database if it doesn't already exist """
     if connection is None:
         print("ERROR: Connection not open!")
@@ -164,7 +168,7 @@ def addBudgetCategory(connection, categoryName):
             print("{} is already present in categories table".format(categoryName))
             #return
         cur = connection.cursor()
-        cur.execute("INSERT INTO categories(name) VALUES(%s)", (categoryName,))
+        cur.execute("INSERT INTO categories(name, table_order) VALUES(%s, %s);", (categoryName,order,))
         connection.commit()
         cur.close()
         #print("Budget Categories: ")
@@ -223,14 +227,14 @@ def addBucketBudget(year : int, category : str):
     except Exception as error:
         print(error)
     
-def setBucketBudget(year : int, category : str, month : int, amountBudgeted):
+def setBucketBudget(year : int, category : str, month : int, amountBudgeted = 0):
     """Sets the budget for a specified category in a specified month."""
     # TODO: If the category/year does not exist in the table, create it.
     monthName = list(calendar.month_name)[month]
 
     # Commit to database
     sqlCmd = f"UPDATE budgetbuckets SET {monthName} = {amountBudgeted} where category='{category}';"
-    print(sqlCmd)
+    #print(sqlCmd)
     try:
         cur = db.cursor()
         cur.execute(sqlCmd)
@@ -245,8 +249,6 @@ def getBucketDataframe():
         return pd.read_sql(sqlCmd, sqlAlchemyEngine)
     except Exception as error:
         print(error)
-
-
 
 def main():
     connection = connect()
