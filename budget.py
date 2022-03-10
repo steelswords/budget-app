@@ -9,6 +9,9 @@ from userInput import *
 from config import *
 from sqlalchemy import create_engine
 
+SCHEMA_FILE = "queries/create_schema.sql"
+CATEGORIES_FILE = "queries/categories.sql"
+
 testing=True
 expenseTableName="expenses"
 if testing:
@@ -47,87 +50,13 @@ db = connect()
 
 def ensureDatabaseSchema(connection):
     """ Ensure the database is properly set up with the proper tables. """
-    commands = (
-            """
-            CREATE TABLE IF NOT EXISTS categories(
-                name varchar(200) not null,
-                primary key(name),
-                UNIQUE(name)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS {}(
-                year smallint not null,
-                month smallint not null,
-                day smallint not null,
-                amount numeric,
-                category varchar(200) references categories(name),
-                description varchar(500),
-                UNIQUE(year, month, day, amount, category)
-            )
-            """.format(expenseTableName),
-            """
-            CREATE TABLE IF NOT EXISTS budgetbuckets(
-                category varchar(200) references categories(name),
-                year smallint not null,
-                January numeric,
-                February numeric,
-                March numeric,
-                April numeric,
-                May numeric,
-                June numeric,
-                July numeric,
-                August numeric,
-                September numeric,
-                October numeric,
-                November numeric,
-                December numeric,
-                UNIQUE(category, year)
-                )
-            """,
-    )
-    categories = [
-            "Food",
-            "Tristan - WTF",
-            "Mar - WTF",
-            "Household Discretionary",
-            "Date",
-            "Eating Out",
-            "Clothes",
-            "Tech Budget",
-            "Decorations",
-            "Gifts",
-            "Furniture",
-            "Gas",
-            "Laundry",
-            "Haircuts",
-            "Medical",
-            "Classroom",
-            "Birthday Budget",
-            "Down payment",
-            "Vacation",
-            "Rent",
-            "Car Maintenance",
-            "Health Insurance",
-            "Car Payment",
-            "Phone Bill",
-            "Car insurance",
-            "Gas Power",
-            "Electricity",
-            "Retirement Contribution",
-            "Savings Contribution",
-            "Christmas Budget",
-            "Christmas Siblings",
-            ]
     try:
         cur = connection.cursor()
-        for command in commands:
-            cur.execute(command)
-        for category in categories:
-            try:
-                addBudgetCategory(connection, category)
-            except Exception as error:
-                print(error)
+        with open(SCHEMA_FILE, 'r') as f:
+            result_iterator = cur.execute(f.read(),  =True)
+        connection.commit()
+        with open(CATEGORIES_FILE, 'r') as f:
+            result_iterator = cur.execit(f.read())
         connection.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -250,12 +179,11 @@ def getBucketDataframe():
 
 def main():
     connection = connect()
-    #ensureDatabaseSchema(connection)
+    ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
     getDateFromUser()
 
 if __name__ == '__main__':
-    setBucketBudget(2022, 'Food', 5, 399)
-
+    main()
 
