@@ -53,7 +53,7 @@ def ensureDatabaseSchema(connection):
     try:
         cur = connection.cursor()
         with open(SCHEMA_FILE, 'r') as f:
-            result_iterator = cur.execute(f.read(),  =True)
+            result_iterator = cur.execute(f.read())
         connection.commit()
         with open(CATEGORIES_FILE, 'r') as f:
             result_iterator = cur.execit(f.read())
@@ -62,10 +62,10 @@ def ensureDatabaseSchema(connection):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-def getBudgetCategories(connection):
+def getBudgetCategories(connecti`on):
     try:
         cur = connection.cursor()
-        cur.execute("SELECT * FROM categories")
+        cur.execute("SELECT name FROM categories ORDER BY table_order ASC;")
         categories = cur.fetchall()
         connection.commit()
         cur.close()
@@ -75,15 +75,13 @@ def getBudgetCategories(connection):
 
 def isBudgetCategoryPresent(connection, categoryName : str) -> bool:
     cur = connection.cursor()
-    #cur.execute("SELECT * FROM categories where name ilike %s", (categoryName))
-    cur.execute("SELECT * FROM categories where name = %s;", (categoryName,))
+    cur.execute("SELECT name FROM categories where name = %s;", (categoryName,))
     matches = cur.fetchall()
     connection.commit()
     cur.close()
-    # print(matches)
     return len(matches) > 0
 
-def addBudgetCategory(connection, categoryName):
+def addBudgetCategory(connection, categoryName, order=100):
     """ Adds a budget category to the database if it doesn't already exist """
     if connection is None:
         print("ERROR: Connection not open!")
@@ -93,11 +91,9 @@ def addBudgetCategory(connection, categoryName):
             print("{} is already present in categories table".format(categoryName))
             #return
         cur = connection.cursor()
-        cur.execute("INSERT INTO categories(name) VALUES(%s)", (categoryName,))
+        cur.execute("INSERT INTO categories(name, table_order) VALUES(%s, %s);", (categoryName,order,))
         connection.commit()
         cur.close()
-        #print("Budget Categories: ")
-        #print(getBudgetCategories(connection))
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
@@ -125,16 +121,6 @@ def addBudgetExpense(connection, year : int, month : int, day : int, category : 
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-#def setBucketCategory(year : int, month : int, category : str, amountToBudget):
-#    try:
-#        cur = connection.cursor()
-#        sqlCmd = f"INSERT INTO budgetbuckets(year, month, category, amount) VALUES ({year}, {month}, {category}, {amountToBudget})"
-#        cur.execute(sqlCmd)
-#        connection.commit()
-#        cur.close()
-#    except (Exception, psycopg2.DatabaseError) as error:
-#        print(error)
-
 def getBucketsByYear(year : int):
     """Returns pandas dataframe with category and allocations by month"""
     try:
@@ -152,14 +138,14 @@ def addBucketBudget(year : int, category : str):
     except Exception as error:
         print(error)
     
-def setBucketBudget(year : int, category : str, month : int, amountBudgeted):
+def setBucketBudget(year : int, category : str, month : int, amountBudgeted = 0):
     """Sets the budget for a specified category in a specified month."""
     # TODO: If the category/year does not exist in the table, create it.
     monthName = list(calendar.month_name)[month]
 
     # Commit to database
     sqlCmd = f"UPDATE budgetbuckets SET {monthName} = {amountBudgeted} where category='{category}';"
-    print(sqlCmd)
+    #print(sqlCmd)
     try:
         cur = db.cursor()
         cur.execute(sqlCmd)
@@ -175,14 +161,12 @@ def getBucketDataframe():
     except Exception as error:
         print(error)
 
-
-
 def main():
     connection = connect()
     ensureDatabaseSchema(connection)
-    print("Categories: ")
-    print(getBudgetCategories(connection))
-    getDateFromUser()
+    # print("Categories: ")
+    # print(getBudgetCategories(connection))
+    # getDateFromUser()
 
 if __name__ == '__main__':
     main()

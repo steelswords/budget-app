@@ -1,11 +1,14 @@
 
+
 CREATE TABLE IF NOT EXISTS categories(
     name varchar(200) not null,
+    table_order smallint,
+    description varchar(1000),
     primary key(name),
     UNIQUE(name)
 );
 
-CREATE TABLE IF NOT EXISTS {}(
+CREATE TABLE IF NOT EXISTS (
     year smallint not null,
     month smallint not null,
     day smallint not null,
