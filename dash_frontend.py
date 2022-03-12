@@ -78,7 +78,14 @@ bucketPage = [
         id='bucket-budget-edit-table',
         columns = bucketColumns,
         data = getBucketData(2022),
-        editable=True),
+        editable=True,
+        style_data_conditional = [
+            {
+                'if' : {'row_index': 'even'},
+                'backgroundColor' : 'rgb(230,230,230)',
+            }
+        ],
+        ),
     html.Button('Save', id='save-buckets', n_clicks=0),
     html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
     html.H2("Budget and Expenses by Category and Month"),
@@ -86,7 +93,13 @@ bucketPage = [
     dash_table.DataTable(id='combined-bucket-expenses-table',
         columns = bucketColumns,
         data = getCombinedTable(),
-        editable = False
+        editable = False,
+        style_data_conditional = [
+            {
+                'if' : {'row_index': 'even'},
+                'backgroundColor' : 'rgb(230,230,230)',
+            }
+        ],
     ),
     html.Div(id='empty-output')
 ]

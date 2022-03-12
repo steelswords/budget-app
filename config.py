@@ -2,14 +2,13 @@ import os
 from dotenv import load_dotenv
 load_dotenv() # Reads env vars from .env file
 
+username=os.getenv('POSTGRES_USER')
+password=os.getenv('POSTGRES_PASSWORD')
+database=os.getenv('POSTGRES_DB')
+host=os.getenv('DB_HOST')
+
 def getDatabaseConfigs():
-    # TODO: By the user: fill in these parameters
-    return f"dbname={os.getenv('DB_NAME')} user={os.getenv('DB_USER')} host={os.getenv('DB_HOST')} password={os.getenv('DB_PASS')}"
+    return f"dbname={database} user={username} host={host} password={password}"
 
 def getSqlAlchemyConnectionString():
-    username=os.getenv('DB_USER')
-    password=os.getenv('DB_PASS')
-    database=os.getenv('DB_NAME')
-    host=os.getenv('DB_HOST')
-
     return f"postgresql+psycopg2://{username}:{password}@{host}:5432/{database}"

@@ -22,7 +22,7 @@ sqlAlchemyEngine = None
 try:
     sqlAlchemyEngine = create_engine(getSqlAlchemyConnectionString())
 except(Exception) as error:
-    print("An error occurred! %s" % error)
+    print("An error occurred creating SqlAlchemy engine! %s" % error)
 
 
 def monthNameToNumber(monthName : str) -> int:
@@ -46,7 +46,11 @@ def connect():
     return connection
 
 # Start a PostgresQL database conneciton
-db = connect()
+try:
+    db = connect()
+except (Exception) as error:
+    print(error)
+
 
 def ensureDatabaseSchema(connection):
     """ Ensure the database is properly set up with the proper tables. """
@@ -62,7 +66,7 @@ def ensureDatabaseSchema(connection):
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
-def getBudgetCategories(connecti`on):
+def getBudgetCategories(connection):
     try:
         cur = connection.cursor()
         cur.execute("SELECT name FROM categories ORDER BY table_order ASC;")
@@ -163,10 +167,9 @@ def getBucketDataframe():
 
 def main():
     connection = connect()
-    ensureDatabaseSchema(connection)
-    # print("Categories: ")
-    # print(getBudgetCategories(connection))
-    # getDateFromUser()
+    print("Categories: ")
+    print(getBudgetCategories(connection))
+    getDateFromUser()
 
 if __name__ == '__main__':
     main()
