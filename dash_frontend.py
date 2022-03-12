@@ -7,8 +7,7 @@ import calendar
 import pandas as pd
 from budget import *
 
-app = Dash(__name__)
-app.Title = "Budget App"
+app = Dash(__name__, title="Budget App")
 
 print(getBudgetCategories(db))
 
