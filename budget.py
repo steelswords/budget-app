@@ -19,7 +19,7 @@ sqlAlchemyEngine = None
 try:
     sqlAlchemyEngine = create_engine(getSqlAlchemyConnectionString())
 except(Exception) as error:
-    print("An error occurred! %s" % error)
+    print("An error occurred creating SqlAlchemy engine! %s" % error)
 
 
 def monthNameToNumber(monthName : str) -> int:
@@ -43,7 +43,11 @@ def connect():
     return connection
 
 # Start a PostgresQL database conneciton
-db = connect()
+try:
+    db = connect()
+except (Exception) as error:
+    print(error)
+
 
 def ensureDatabaseSchema(connection):
     """ Ensure the database is properly set up with the proper tables. """
