@@ -1,5 +1,3 @@
-
-
 CREATE TABLE IF NOT EXISTS categories(
     name varchar(200) not null,
     table_order smallint,
@@ -8,7 +6,7 @@ CREATE TABLE IF NOT EXISTS categories(
     UNIQUE(name)
 );
 
-CREATE TABLE IF NOT EXISTS (
+CREATE TABLE IF NOT EXISTS expenses (
     year smallint not null,
     month smallint not null,
     day smallint not null,

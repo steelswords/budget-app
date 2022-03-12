@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import sys
 from datetime import datetime
 import calendar
 import psycopg2
@@ -9,13 +9,9 @@ from userInput import *
 from config import *
 from sqlalchemy import create_engine
 
-SCHEMA_FILE = "queries/create_schema.sql"
-CATEGORIES_FILE = "queries/categories.sql"
+SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "queries/create_schema.sql")
+CATEGORIES_FILE = os.path.join(os.path.dirname(__file__), "queries/categories.sql")
 
-testing=True
-expenseTableName="expenses"
-if testing:
-    expenseTableName="seedexpenses"
 
 # Start SQLAlchemy engine for getting pandas dataframes from the db
 sqlAlchemyEngine = None
@@ -60,7 +56,7 @@ def ensureDatabaseSchema(connection):
             result_iterator = cur.execute(f.read())
         connection.commit()
         with open(CATEGORIES_FILE, 'r') as f:
-            result_iterator = cur.execit(f.read())
+            result_iterator = cur.execute(f.read())
         connection.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -167,9 +163,10 @@ def getBucketDataframe():
 
 def main():
     connection = connect()
+    ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
-    getDateFromUser()
+    # getDateFromUser()
 
 if __name__ == '__main__':
     main()
