@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import sys
 from datetime import datetime
 import calendar
 import psycopg2
@@ -9,10 +9,9 @@ from userInput import *
 from config import *
 from sqlalchemy import create_engine
 
-testing=True
-expenseTableName="expenses"
-if testing:
-    expenseTableName="seedexpenses"
+SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "queries/create_schema.sql")
+CATEGORIES_FILE = os.path.join(os.path.dirname(__file__), "queries/categories.sql")
+
 
 # Start SQLAlchemy engine for getting pandas dataframes from the db
 sqlAlchemyEngine = None
@@ -51,91 +50,13 @@ except (Exception) as error:
 
 def ensureDatabaseSchema(connection):
     """ Ensure the database is properly set up with the proper tables. """
-    commands = (
-            """
-            CREATE TABLE IF NOT EXISTS categories(
-                name varchar(200) not null,
-                table_order smallint,
-                description varchar(1000),
-                primary key(name),
-                UNIQUE(name)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS {}(
-                year smallint not null,
-                month smallint not null,
-                day smallint not null,
-                amount numeric,
-                category varchar(200) references categories(name),
-                description varchar(500),
-                UNIQUE(year, month, day, amount, category)
-            )
-            """.format(expenseTableName),
-            """
-            CREATE TABLE IF NOT EXISTS budgetbuckets(
-                category varchar(200) references categories(name),
-                year smallint not null,
-                January numeric,
-                February numeric,
-                March numeric,
-                April numeric,
-                May numeric,
-                June numeric,
-                July numeric,
-                August numeric,
-                September numeric,
-                October numeric,
-                November numeric,
-                December numeric,
-                UNIQUE(category, year)
-                )
-            """,
-    )
-    categories = [
-            "Food",
-            "Tristan - WTF",
-            "Mar - WTF",
-            "Household Discretionary",
-            "Date",
-            "Eating Out",
-            "Clothes",
-            "Tech Budget",
-            "Decorations",
-            "Gifts",
-            "Furniture",
-            "Gas",
-            "Laundry",
-            "Haircuts",
-            "Medical",
-            "Classroom",
-            "Birthday Budget",
-            "Down payment",
-            "Vacation",
-            "Rent",
-            "Car Maintenance",
-            "Health Insurance",
-            "Car Payment",
-            "Phone Bill",
-            "Car insurance",
-            "Gas Power",
-            "Electricity",
-            "Retirement Contribution",
-            "Savings Contribution",
-            "Christmas Budget",
-            "Christmas Siblings",
-            ]
     try:
         cur = connection.cursor()
-        for command in commands:
-            cur.execute(command)
-        order = 1
-        for category in categories:
-            try:
-                addBudgetCategory(connection, category, order)
-                order = order + 1
-            except Exception as error:
-                print(error)
+        with open(SCHEMA_FILE, 'r') as f:
+            result_iterator = cur.execute(f.read())
+        connection.commit()
+        with open(CATEGORIES_FILE, 'r') as f:
+            result_iterator = cur.execute(f.read())
         connection.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -242,11 +163,11 @@ def getBucketDataframe():
 
 def main():
     connection = connect()
+    ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
-    getDateFromUser()
+    # getDateFromUser()
 
 if __name__ == '__main__':
-    setBucketBudget(2022, 'Food', 5, 399)
-
+    main()
 
