@@ -19,6 +19,17 @@ bucketColumns=(
     [{'id': m, 'name': m, 'type':'numeric', 'format':money} for m in list(calendar.month_name)[1:13]]
 )
 
+expenseColumns=(
+    [
+    {'id': 'year', 'name': 'Year'},
+    {'id': 'month', 'name': 'Month'},
+    {'id': 'day', 'name': 'Day'},
+    {'id': 'category', 'name': 'Category'},
+    {'id': 'amount', 'name': 'Amount'},
+    {'id': 'description', 'name': 'Description'},
+    ]
+)
+
 def getBucketData(year : int):
     result = []
     for category in getBudgetCategories(db):
@@ -133,6 +144,7 @@ bucketPage = [
     html.Div(id='empty-output')
 ]
 
+expensesDataFrame = pd.read_sql('select * from expenses;', sqlAlchemyEngine)
 expensePage = [
     html.H1("Expenses"),
     dcc.Dropdown(["2022"], "2022", id='expense-year'),
@@ -144,7 +156,18 @@ expensePage = [
     "Description: ",
     dcc.Input(id="expense-description", type="text",placeholder="Description"),
     html.Button('Add', id='add-expense', n_clicks=0),
-    html.Div(id='expense-output')
+    html.Div(id='expense-output'),
+    dash_table.DataTable(
+        columns = [{'name': i.capitalize(), 'id': i} for i in expensesDataFrame.columns],
+        data = expensesDataFrame.to_dict('record'),
+        style_data_conditional = [
+            {'if': {'column_id': 'year'}, 'width': '40px'},
+            {'if': {'column_id': 'month'}, 'width': '40px'},
+            {'if': {'column_id': 'day'}, 'width': '40px'},
+
+        ],
+        editable = False,
+    )
 ]
 
 # Main layout
