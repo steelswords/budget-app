@@ -30,4 +30,6 @@ VALUES
     ('Retirement Contribution', 28),
     ('Savings Contribution', 29),
     ('Christmas Budget', 30),
-    ('Christmas Siblings', 31);
+    ('Christmas Siblings', 31),
+    ('Business Travel', 32),
+    ('Other', 33);

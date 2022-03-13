@@ -164,8 +164,9 @@ expensePage = [
             {'if': {'column_id': 'year'}, 'width': '40px'},
             {'if': {'column_id': 'month'}, 'width': '40px'},
             {'if': {'column_id': 'day'}, 'width': '40px'},
-
         ],
+        filter_action="native",
+        sort_action="native",
         editable = False,
     )
 ]
