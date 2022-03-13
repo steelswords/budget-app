@@ -18,14 +18,11 @@ lowerCaseMonthNames = [ m.lower() for m in list(calendar.month_name)[1:]]
 
 bucketColumns=(
     [{'id': 'category', 'name': 'Category'}] +
-    #[{'id': 'January', 'name': 'January'}]
     [{'id': m, 'name': m, 'type':'numeric', 'format':money} for m in list(calendar.month_name)[1:13]]
 )
 
 def getBucketData(year : int):
-    wholeDataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year}", sqlAlchemyEngine)
     result = []
-    #for category in wholeDataFrame['category']:
     for category in getBudgetCategories(db):
         # Find the bucket allocation for each month
         innerResult = {'category': category}
@@ -56,20 +53,62 @@ def getExpenseData(year : int):
     print(result)
     return result
 
+def getTooltipData(year : int):
+    """Returns tooltip_data for the combined table, populated with Markdown tables and properly formatted """
+    buckets = getBucketData(2022)
+    dataFrame = pd.read_sql(f"SELECT * FROM {expenseTableName}", sqlAlchemyEngine)
+    tooltips = []
+    for index in range(0, len(buckets)):
+        category = buckets[index]['category']
+        innerDictionary = {m : {'value': "", 'type': 'markdown'} for m in monthNames}
+        for month in monthNames:
+            innerDictionary[month]['value'] = getMarkdownTableFromExpenses(year, month, category, dataFrame)
+        # Every odd row contians buckets, not expenses. So we don't want there to be a tooltip there.
+        tooltips.append({m: "" for m in monthNames})
+        tooltips.append(innerDictionary)
+    return tooltips
+
+def getMarkdownTableFromExpenses(year : int, month : str, category : str, dataFrame) -> str:
+    """Returns a string that contains a Markdown table detailing the day, amount, and desscription of
+    all expenses meeting year, month, and category parameters"""
+    tooltip = "|Day| Amount | Description |"
+    tooltip += "\n|---|-----|-------------------|"
+    relevantData = dataFrame.query(f"year == {year} and month == {monthNameToNumber(month)} and category == '{category}'")
+    for index, row in relevantData.iterrows():
+        amountFormattedAsMoney = "${:,.2f}".format(row['amount'])
+        tooltip += f"\n|{row['day']}| {amountFormattedAsMoney} | {row['description']} |"
+    return tooltip
+
 def getCombinedTable():
+    """Returns a DataTable that interleaves the alloted bucket amounts with the total expenses per month for each
+    category"""
     buckets = getBucketData(2022)
     expenses = getExpenseData(2022)
+    tooltips = []
     result = []
     for index in range(0, len(buckets)):
-
         bucketsRow = buckets[index]
         expensesRow = expenses[index]
+        baseCategoryName = expensesRow['category']
         # Add a name to expenses category name
-        expensesRow['category'] = expensesRow['category'] + ' - Spent'
+        expensesRow['category'] = baseCategoryName + ' - Spent'
         print(f"Combining {bucketsRow['category']} with {expensesRow['category']}")
         result.append(bucketsRow)
         result.append(expensesRow)
-    return result
+
+    return dash_table.DataTable(id='combined-bucket-expenses-table',
+        columns = bucketColumns,
+        data = result,
+        editable = False,
+        style_data_conditional = [
+            {
+                'if' : {'row_index': 'even'},
+                'backgroundColor' : 'rgb(230,230,230)',
+            }
+        ],
+        tooltip_data = getTooltipData(2022),
+        tooltip_duration=None, # So they will stay up indefinitely
+    )
 
 bucketPage = [
     html.H2("Budget by Category and Month"),
@@ -84,22 +123,12 @@ bucketPage = [
                 'backgroundColor' : 'rgb(230,230,230)',
             }
         ],
-        ),
+    ),
     html.Button('Save', id='save-buckets', n_clicks=0),
     html.Button('Copy Buckets to Next Month', id='copy-buckets', n_clicks=0),
     html.H2("Budget and Expenses by Category and Month"),
     html.P("Remember to refresh this page if you've added expenses!"),
-    dash_table.DataTable(id='combined-bucket-expenses-table',
-        columns = bucketColumns,
-        data = getCombinedTable(),
-        editable = False,
-        style_data_conditional = [
-            {
-                'if' : {'row_index': 'even'},
-                'backgroundColor' : 'rgb(230,230,230)',
-            }
-        ],
-    ),
+    getCombinedTable(),
     html.Div(id='empty-output')
 ]
 
