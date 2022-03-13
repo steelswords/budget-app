@@ -52,9 +52,11 @@ def ensureDatabaseSchema(connection):
     """ Ensure the database is properly set up with the proper tables. """
     try:
         cur = connection.cursor()
+        print("Ensuring tables")
         with open(SCHEMA_FILE, 'r') as f:
             result_iterator = cur.execute(f.read())
         connection.commit()
+        print("Ensuring categories")
         with open(CATEGORIES_FILE, 'r') as f:
             result_iterator = cur.execute(f.read())
         connection.commit()
@@ -102,7 +104,7 @@ def addBudgetCategory(connection, categoryName, order=100):
 def getBudgetExpenses(connection):
     try:
         cur = connection.cursor()
-        cur.execute("SELECT * FROM {}".format(expenseTableName));
+        cur.execute("SELECT * FROM expenses");
         connection.commit()
         expenses = cur.fetchall()
         cur.close()
@@ -114,7 +116,7 @@ def addBudgetExpense(connection, year : int, month : int, day : int, category : 
         amount : float, description : str):
     try:
         cur = connection.cursor()
-        sqlCmd = "INSERT INTO {}(year, month, day, amount, category, description) VALUES ({}, {}, {}, {}, '{}', '{}');".format(expenseTableName, year, month, day, amount, category, description)
+        sqlCmd = "INSERT INTO expenses(year, month, day, amount, category, description) VALUES ({}, {}, {}, {}, '{}', '{}');".format(year, month, day, amount, category, description)
         cur.execute(sqlCmd)
         connection.commit()
         cur.close()
@@ -166,7 +168,6 @@ def main():
     ensureDatabaseSchema(connection)
     print("Categories: ")
     print(getBudgetCategories(connection))
-    # getDateFromUser()
 
 if __name__ == '__main__':
     main()

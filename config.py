@@ -2,9 +2,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv() # Reads env vars from .env file
 
-username=os.getenv('DB_USER')
-password=os.getenv('DB_PASS')
-database=os.getenv('DB_NAME')
+username=os.getenv('POSTGRES_USER')
+password=os.getenv('POSTGRES_PASSWORD')
+database=os.getenv('POSTGRES_DB')
 host=os.getenv('DB_HOST')
 
 def getDatabaseConfigs():

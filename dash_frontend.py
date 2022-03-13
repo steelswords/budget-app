@@ -9,8 +9,6 @@ from budget import *
 
 app = Dash(__name__, title="Budget App")
 
-print(getBudgetCategories(db))
-
 money = FormatTemplate.money(2)
 
 monthNames = list(calendar.month_name)[1:12]
@@ -27,7 +25,7 @@ def getBucketData(year : int):
         # Find the bucket allocation for each month
         innerResult = {'category': category}
         dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
-        print(dataFrame)
+        # print(dataFrame)
         for month in lowerCaseMonthNames:
             amountAllocated = dataFrame[month][0]
             innerResult[month.capitalize()] = amountAllocated
@@ -43,20 +41,20 @@ def getExpenseData(year : int):
     for category in categories:
         # Find the sum of expenses for each month, add them to list
         innerResult = {'category': category}
-        dataFrame = pd.read_sql(f"SELECT * FROM {expenseTableName} WHERE category = '{category}'", sqlAlchemyEngine)
+        dataFrame = pd.read_sql(f"SELECT * FROM expenses WHERE category = '{category}'", sqlAlchemyEngine)
         # Add list to list of lists
         for month in range(1,13):
             amountSpent = dataFrame.query(f'month == {month}').amount.sum()
             monthString = list(calendar.month_name)[month]
             innerResult[monthString] = amountSpent
         result.append(innerResult)
-    print(result)
+    # print(result)
     return result
 
 def getTooltipData(year : int):
     """Returns tooltip_data for the combined table, populated with Markdown tables and properly formatted """
     buckets = getBucketData(2022)
-    dataFrame = pd.read_sql(f"SELECT * FROM {expenseTableName}", sqlAlchemyEngine)
+    dataFrame = pd.read_sql(f"SELECT * FROM expenses", sqlAlchemyEngine)
     tooltips = []
     for index in range(0, len(buckets)):
         category = buckets[index]['category']
@@ -79,9 +77,8 @@ def getMarkdownTableFromExpenses(year : int, month : str, category : str, dataFr
         tooltip += f"\n|{row['day']}| {amountFormattedAsMoney} | {row['description']} |"
     return tooltip
 
-def getCombinedTable():
-    """Returns a DataTable that interleaves the alloted bucket amounts with the total expenses per month for each
-    category"""
+def getCombinedTableData():
+    """Returns the data array for a getCombinedTable()"""
     buckets = getBucketData(2022)
     expenses = getExpenseData(2022)
     tooltips = []
@@ -92,13 +89,17 @@ def getCombinedTable():
         baseCategoryName = expensesRow['category']
         # Add a name to expenses category name
         expensesRow['category'] = baseCategoryName + ' - Spent'
-        print(f"Combining {bucketsRow['category']} with {expensesRow['category']}")
+        #print(f"Combining {bucketsRow['category']} with {expensesRow['category']}")
         result.append(bucketsRow)
         result.append(expensesRow)
+    return result
 
+def getCombinedTable():
+    """Returns a DataTable that interleaves the alloted bucket amounts with the total expenses per month for each
+    category"""
     return dash_table.DataTable(id='combined-bucket-expenses-table',
         columns = bucketColumns,
-        data = result,
+        data = getCombinedTableData(),
         editable = False,
         style_data_conditional = [
             {
@@ -165,6 +166,7 @@ app.layout = serve_layout()
 # Callback to update budget buckets
 @app.callback(
     Output('combined-bucket-expenses-table', 'data'),
+    Output('combined-bucket-expenses-table', 'tooltip_data'),
     State('bucket-budget-edit-table', 'data'),
     Input('bucket-budget-edit-table', 'data_timestamp'),
     Input('bucket-budget-edit-table', 'columns'))
@@ -177,10 +179,9 @@ def budgetBucketCallback(data, data_timestamp, columns):
             budgetedAmount = row[monthNames[monthNumber]]
             if budgetedAmount is None:
                 budgetedAmount = 0
-            #print(f"Setting {row['category']} for month {monthNumber} to {budgetedAmount}")
             setBucketBudget(year = 2022, category = row['category'],
                 month = monthNumber, amountBudgeted = budgetedAmount)
-    return getCombinedTable()
+    return getCombinedTableData(), getTooltipData(2022)
 
 # Callback to add Budget Expenses
 @app.callback(
