@@ -32,4 +32,5 @@ VALUES
     ('Christmas Budget', 30),
     ('Christmas Siblings', 31),
     ('Business Travel', 32),
-    ('Other', 33);
+    ('Other', 33)
+ON CONFLICT (name) DO NOTHING;
