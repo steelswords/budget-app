@@ -132,7 +132,7 @@ def getBucketsByYear(year : int):
 
 def addBucketBudget(year : int, category : str):
     cur = db.cursor()
-    sqlCmd = f"INSERT INTO budgetbuckets(category, year) VALUES ('{category}', {year});"
+    sqlCmd = f"INSERT INTO budgetbuckets(category, year, january,february,march,april,may,june,july,august,september,october,november,december) VALUES ('{category}', {year}, 0,0,0,0, 0,0,0,0, 0,0,0,0);"
     try:
         cur.execute(sqlCmd)
         db.commit()

@@ -36,9 +36,20 @@ def getBucketData(year : int):
         # Find the bucket allocation for each month
         innerResult = {'category': category}
         dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
+        # print("category = {}".format(category))
         # print(dataFrame)
         for month in lowerCaseMonthNames:
-            amountAllocated = dataFrame[month][0]
+            try:
+                amountAllocated = dataFrame[month][0]
+            except IndexError as e:
+                # If we are seeing this exception, that means that there isn't
+                # bucketData for this category yet, so we add it.
+                # TODO: This is a hack. The right thing to do would be to check
+                # this in ensureDatabaseSchema()
+                addBucketBudget(year=year, category=category)
+                dataFrame = pd.read_sql(f"SELECT * FROM budgetbuckets where year = {year} and category = '{category}';", sqlAlchemyEngine)
+                amountAllocated = dataFrame[month][0]
+
             innerResult[month.capitalize()] = amountAllocated
         result.append(innerResult)
     return result
