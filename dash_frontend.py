@@ -3,11 +3,16 @@
 from dash import Dash, dash_table, dcc, html, State
 from dash.dash_table import DataTable, FormatTemplate
 from dash.dependencies import Input, Output
+import dash_auth
 import calendar
 import pandas as pd
 from budget import *
+from passwords import *
 
 app = Dash(__name__, title="Budget App")
+
+# Authentication
+auth = dash_auth.BasicAuth(app, APP_USERS_AND_PASSWORDS)
 
 money = FormatTemplate.money(2)
 
@@ -245,5 +250,3 @@ def add_expense_callback(expenseYear, expenseMonth, expenseDay, expenseCategory,
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
