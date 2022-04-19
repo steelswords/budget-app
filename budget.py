@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-import sys
 from datetime import datetime
 import calendar
 import psycopg2
-import configparser
 import pandas as pd
 from userInput import *
 from config import *

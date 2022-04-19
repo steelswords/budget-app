@@ -1,0 +1,42 @@
+#page-header {
+  text-align: center;
+}
+
+#edit-title {
+  text-align: center;
+}
+
+.entry-items {
+  text-align: center;
+  width: 250px;
+  padding: 10px;
+  font-size: 18px;
+  border-radius: 8px;
+}
+
+#expense-output {
+  padding: 10px;
+}
+
+.entry-item-div {
+  align-items: center;
+  /* border: 1px solid rgb(113, 113, 248); */
+  display: flex;
+  padding: 20px;
+}
+
+#add-expense {
+  align-items: center;
+  background-color: lightgreen;
+  border: black;
+  padding: 15px 32px;
+  text-align: center;
+  display: flex;
+  font-size: 24px;
+  border-radius: 8px;
+}
+
+#all-inputs {
+  /* border: 1px solid rgb(113, 113, 248); */
+  margin: 10px;
+}

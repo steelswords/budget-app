@@ -162,17 +162,23 @@ bucketPage = [
 
 expensesDataFrame = pd.read_sql('select * from expenses;', sqlAlchemyEngine)
 expensePage = [
-    html.H1("Expenses"),
-    dcc.Dropdown(["2022"], "2022", id='expense-year'),
-    dcc.Dropdown(list(calendar.month_name), "January", id="expense-month"),
-    html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day")),
-    dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown"),
-    "Amount: ",
-    dcc.Input(id="expense-amount", type="number", placeholder="Amount"),
-    "Description: ",
-    dcc.Input(id="expense-description", type="text",placeholder="Description"),
-    html.Button('Add', id='add-expense', n_clicks=0),
-    html.Div(id='expense-output'),
+    html.Div(children=[
+        html.H1("Expenses", id="edit-title"),
+        html.Div(children=[
+            dcc.Dropdown(["2022"], "2022", id='expense-year', className="entry-items"),
+            dcc.Dropdown(list(calendar.month_name), "January", id="expense-month", className="entry-items"),
+            html.Div(dcc.Input(id="expense-day", type="number", placeholder="Day", className="entry-items")),
+        ], className="entry-item-div"),
+        html.Div(children=[
+            dcc.Dropdown(getBudgetCategories(db), "Food", id="expense-category-dropdown", className="entry-items"),
+            "Amount: ",
+            dcc.Input(id="expense-amount", type="number", placeholder="Amount", className="entry-items"),
+            "Description: ",
+            dcc.Input(id="expense-description", type="text",placeholder="Description", className="entry-items"),
+        ], className="entry-item-div"),
+        html.Button('Add', id='add-expense', n_clicks=0)
+    ], id="all-inputs"),
+    html.Div(children=[], id='expense-output'),
     dash_table.DataTable(
         columns = [{'name': i.capitalize(), 'id': i} for i in expensesDataFrame.columns],
         data = expensesDataFrame.to_dict('record'),
@@ -184,6 +190,7 @@ expensePage = [
         filter_action="native",
         sort_action="native",
         editable = False,
+        id="output-table"
     )
 ]
 
@@ -192,7 +199,7 @@ expensePage = [
 # TODO: Get this to happen dynamically whenever you add entries.
 def serve_layout():
     return html.Div([
-        html.H1('Budget'),
+        html.H1('Budget', id="page-header"),
         dcc.Tabs([
             dcc.Tab(label='View', children = bucketPage),
             dcc.Tab(label='Edit', children = expensePage)
